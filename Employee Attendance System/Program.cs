@@ -1,4 +1,5 @@
 using Employee_Attendance_System.Context;
+using Employee_Attendance_System.MiddleWare;
 using Employee_Attendance_System.Services.AttendenceServices;
 using Employee_Attendance_System.Services.LoginServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -93,10 +94,10 @@ namespace Employee_Attendance_System
             }
 
             app.UseHttpsRedirection();
-
+            
             app.UseAuthentication(); // Must come before Authorization
             app.UseAuthorization();
-
+            app.UseMiddleware<GetUserIdMiddleWare>();
             app.MapControllers();
 
             app.Run();

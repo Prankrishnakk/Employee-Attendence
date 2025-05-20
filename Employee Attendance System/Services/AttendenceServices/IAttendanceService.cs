@@ -5,11 +5,13 @@ namespace Employee_Attendance_System.Services.AttendenceServices
 {
     public interface IAttendanceService
     {
-        Task<string> PunchInAsync(PunchRequestDto request);
-        Task<string> PunchOutAsync(PunchRequestDto request);
+        Task<string> PunchInAsync(int employeeId);
+        Task<string> PunchOutAsync(int employeeId);
         Task<AttendanceResponseDto> GetTodayAttendance(int employeeId);
         Task<List<AttendanceResponseDto>> GetMonthlyAttendance(int employeeId, int month, int year);
         Task<string> ManualEntryAsync(ManualAttendanceDto dto);
-        Task<List<Employee>> GetAbsentEmployees(DateTime date);
+        Task<List<Employee>> GetAbsentEmployees(string date);
+        Task<bool> IsEmployeeAbsent(int employeeId, string date);
+        Task<AttendanceResponseDto> GetToday(int employeeId);
     }
 }

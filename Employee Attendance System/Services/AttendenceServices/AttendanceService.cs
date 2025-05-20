@@ -14,7 +14,7 @@ namespace Employee_Attendance_System.Services.AttendenceServices
             _context = context;
         }
 
-        public async Task<string> PunchInAsync(PunchRequestDto request)
+        public async Task<string> PunchInAsync(int employeeId)
         {
             try
             {
@@ -22,7 +22,7 @@ namespace Employee_Attendance_System.Services.AttendenceServices
                 var now = DateTime.Now.TimeOfDay;
 
                 var existingPunch = await _context.AttendancePunches
-                    .FirstOrDefaultAsync(x => x.EmployeeId == request.EmployeeId && x.PunchDate == today);
+                    .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.PunchDate == today);
 
                 if (existingPunch != null)
                     return "Already punched in today.";
@@ -31,7 +31,7 @@ namespace Employee_Attendance_System.Services.AttendenceServices
 
                 var punch = new AttendancePunch
                 {
-                    EmployeeId = request.EmployeeId,
+                    EmployeeId = employeeId,
                     PunchDate = today,
                     PunchInTime = now,
                     Status = status
@@ -44,12 +44,12 @@ namespace Employee_Attendance_System.Services.AttendenceServices
             }
             catch (Exception ex)
             {
-                // Log the exception if you have a logger
                 return $"Error during punch in: {ex.Message}";
             }
         }
 
-        public async Task<string> PunchOutAsync(PunchRequestDto request)
+
+        public async Task<string> PunchOutAsync(int employeeId)
         {
             try
             {
@@ -57,7 +57,7 @@ namespace Employee_Attendance_System.Services.AttendenceServices
                 var now = DateTime.Now.TimeOfDay;
 
                 var punch = await _context.AttendancePunches
-                    .FirstOrDefaultAsync(x => x.EmployeeId == request.EmployeeId && x.PunchDate == today);
+                    .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.PunchDate == today);
 
                 if (punch == null)
                     return "No punch in record found for today.";
@@ -78,6 +78,7 @@ namespace Employee_Attendance_System.Services.AttendenceServices
                 return $"Error during punch out: {ex.Message}";
             }
         }
+
 
         public async Task<AttendanceResponseDto> GetTodayAttendance(int employeeId)
         {
@@ -159,22 +160,67 @@ namespace Employee_Attendance_System.Services.AttendenceServices
             }
         }
 
-        public async Task<List<Employee>> GetAbsentEmployees(DateTime date)
+        public async Task<List<Employee>> GetAbsentEmployees(string date)
         {
+            if (!DateTime.TryParse(date, out var parsedDate))
+                throw new ArgumentException("Invalid date format. Please use 'yyyy-MM-dd' or a recognizable date.");
+
             try
             {
-                var attended = await _context.AttendancePunches
-                    .Where(x => x.PunchDate == date)
+                var attendedEmployeeIds = await _context.AttendancePunches
+                    .Where(x => x.PunchDate.Date == parsedDate.Date)
                     .Select(x => x.EmployeeId)
                     .ToListAsync();
 
-                return await _context.Employees
-                    .Where(x => !attended.Contains(x.Id))
+                var absentEmployees = await _context.Employees
+                    .Where(x => !attendedEmployeeIds.Contains(x.Id))
                     .ToListAsync();
+
+                return absentEmployees;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to fetch absent employees.", ex);
+            }
+        }
+        public async Task<bool> IsEmployeeAbsent(int employeeId, string date)
+        {
+            if (!DateTime.TryParse(date, out var parsedDate))
+                throw new ArgumentException("Invalid date format. Please use 'yyyy-MM-dd' or a recognizable date.");
+
+            try
+            {
+                var hasAttendance = await _context.AttendancePunches
+                    .AnyAsync(x => x.EmployeeId == employeeId && x.PunchDate.Date == parsedDate.Date);
+
+                return !hasAttendance;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to check employee attendance.", ex);
+            }
+        }
+        public async Task<AttendanceResponseDto> GetToday(int employeeId)
+        {
+            try
+            {
+                var today = DateTime.Today;
+                var punch = await _context.AttendancePunches
+                    .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.PunchDate == today);
+
+                if (punch == null) return null;
+
+                return new AttendanceResponseDto
+                {
+                    Date = today,
+                    Status = punch.Status,
+                    PunchInTime = punch.PunchInTime,
+                    PunchOutTime = punch.PunchOutTime
+                };
             }
             catch (Exception)
             {
-                throw new Exception("Failed to fetch absent employees.");
+                throw new Exception("Failed to fetch today's attendance.");
             }
         }
     }

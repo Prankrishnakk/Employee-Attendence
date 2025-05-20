@@ -17,6 +17,12 @@ namespace Employee_Attendance_System.Context
             modelBuilder.Entity<Employee>()
                 .Property(e => e.Role)
                 .HasDefaultValue("Employee");
+
+
+            modelBuilder.Entity<AttendancePunch>()
+                .HasOne(x => x.Employee)
+                .WithMany(e => e.AttendancePunches)
+                .HasForeignKey(c => c.EmployeeId);
         }
     }
 
