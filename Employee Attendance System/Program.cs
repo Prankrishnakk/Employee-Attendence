@@ -1,5 +1,6 @@
 using Employee_Attendance_System.Context;
 using Employee_Attendance_System.MiddleWare;
+using Employee_Attendance_System.Services.AdminServices;
 using Employee_Attendance_System.Services.AttendenceServices;
 using Employee_Attendance_System.Services.LoginServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,7 +23,8 @@ namespace Employee_Attendance_System
 
             // 2. Application services
             builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<IAttendanceService, AttendanceService>();    
+            builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+            builder.Services.AddScoped<IAdminService, AdminService>();
 
             // 3. Controllers
             builder.Services.AddControllers();

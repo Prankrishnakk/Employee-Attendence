@@ -1,4 +1,5 @@
 ﻿using Employee_Attendance_System.Dto;
+using Employee_Attendance_System.Services.AdminServices;
 using Employee_Attendance_System.Services.AttendenceServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -11,11 +12,47 @@ namespace Employee_Attendance_System.Controllers.AdminController
     public class AdminController : ControllerBase
     {
         private readonly IAttendanceService _attendanceService;
+        private readonly IAdminService _adminService;
 
-        public AdminController(IAttendanceService attendanceService)
+        public AdminController(IAttendanceService attendanceService, IAdminService adminService)
         {
             _attendanceService = attendanceService;
+            _adminService = adminService;
         }
+        // POST: api/attendance/punch-in
+        [HttpPost("punch-in")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> PunchIn()
+        {
+            try
+            {
+                int employeeId = Convert.ToInt32(HttpContext.Items["UserId"]);
+                var result = await _attendanceService.PunchInAsync(employeeId);
+                return Ok(new { message = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+        // POST: api/attendance/punch-out
+        [HttpPost("punch-out")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> PunchOut()
+        {
+            try
+            {
+                int employeeId = Convert.ToInt32(HttpContext.Items["UserId"]);
+                var result = await _attendanceService.PunchOutAsync(employeeId);
+                return Ok(new { message = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+
         // GET: api/attendance/today/{employeeId}
         [HttpGet("today/{employeeId}")]
         [Authorize(Roles = "Admin")]
@@ -83,5 +120,28 @@ namespace Employee_Attendance_System.Controllers.AdminController
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
+           // PUT: api/Admin/change-role
+        [HttpPut("change-role")]
+        public async Task<IActionResult> ChangeUserRole([FromBody] ChangeUserRoleRequest request)
+        {
+            var success = await _adminService.ChangeUserRoleAsync(request.UserId, request.NewRole);
+            if (!success)
+                return NotFound("User not found.");
+
+            return Ok("User role updated successfully.");
+        }
+
+        // DELETE: api/Admin/delete-user/{userId}
+        [HttpDelete("delete-user/{userId}")]
+        public async Task<IActionResult> DeleteUser(int userId)
+        {
+            var success = await _adminService.DeleteUserAsync(userId);
+            if (!success)
+                return NotFound("User not found.");
+
+            return Ok("User deleted successfully.");
+        }
     }
 }
+
